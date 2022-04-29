@@ -202,14 +202,20 @@ pupation <- development_data %>%
 development_model <- lm(days_to_pupation ~ longterm_diet*larval_diet*fly_line, data = development_data)
 
 development_model1 <- glm(days_to_pupation ~sex+longterm_diet*larval_diet, data = development_data, family = poisson(link = "log"))
+broom::tidy(development_model2, exponentiate=T, conf.int=T)
 
+
+#mixed model - some variance caused by random effects so need to use this
 development_model2<- glmer(days_to_pupation ~ sex+longterm_diet*larval_diet+(1|fly_line)+(1|egg_collection_date), data = development_data, family = poisson(link = "log"))
 
 
-broom::tidy(development_model1, exponentiate=T, conf.int=T)
 
 emmeans::emmeans(development_model2, specs = ~ sex+longterm_diet*larval_diet, type = "response")
+emmeans::emmeans(development_model2, specs = pairwise~ sex+longterm_diet*larval_diet, type = "response")
+
+emmeans::emmeans(development_model2, specs =pairwise ~ longterm_diet*larval_diet, type = "response")
 emmeans::emmeans(development_model2, specs = ~ longterm_diet*larval_diet, type = "response")
+
 
 ####################### days to eclosion ###################################################################################
 development_data %>% 
