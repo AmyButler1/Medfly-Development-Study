@@ -201,9 +201,15 @@ pupation <- development_data %>%
 
 development_model <- lm(days_to_pupation ~ longterm_diet*larval_diet*fly_line, data = development_data)
 
+development_model1 <- glm(days_to_pupation ~sex+longterm_diet*larval_diet, data = development_data, family = poisson(link = "log"))
 
-development_model <- glmer(days_to_pupation ~ sex+longterm_diet*larval_diet+(1|fly_line/plate/well)+(1|egg_collection_date), data = development_data, family = poisson(link = "log"))
+development_model2<- glmer(days_to_pupation ~ sex+longterm_diet*larval_diet+(1|fly_line)+(1|egg_collection_date), data = development_data, family = poisson(link = "log"))
 
+
+broom::tidy(development_model1, exponentiate=T, conf.int=T)
+
+emmeans::emmeans(development_model2, specs = ~ sex+longterm_diet*larval_diet, type = "response")
+emmeans::emmeans(development_model2, specs = ~ longterm_diet*larval_diet, type = "response")
 
 ####################### days to eclosion ###################################################################################
 development_data %>% 
@@ -246,10 +252,11 @@ development_model3 <- lm(days_to_eclosion ~ larval_diet*longterm_diet*fly_line, 
 
 development_model3 <- glmer(days_to_eclosion ~ sex+larval_diet*longterm_diet+(1|fly_line/plate/well)+(1|egg_collection_date), data = development_data, family = poisson(link = "log"))
 
+development_model3<- glm(days_to_eclosion ~ sex+longterm_diet*larval_diet, data = development_data, family = poisson(link="log"))
+broom::tidy(development_model3, exponentiate=T, conf.int=T)
 
 
-
-
+emmeans::emmeans(development_model3, specs = ~ sex+longterm_diet*larval_diet, type = "response")
 
 
 
@@ -300,16 +307,19 @@ pupation_eclosion <-development_data %>%
 ############### Analysis
 
 
-development_model <- lm(days_pupation_to_eclosion ~ longterm_diet*larval_diet*fly_line, data = development_data)
-
-development_model <- glmer(days_pupation_to_eclosion ~ sex+longterm_diet*larval_diet+(1|fly_line/plate/well)+(1|egg_collection_date), data = development_data, family = poisson(link = "log"))
+development_model4 <- lm(days_pupation_to_eclosion ~ longterm_diet*larval_diet*fly_line, data = development_data)
 
 
 
+development_model4<- glm(days_pupation_to_eclosion ~ sex+longterm_diet*larval_diet, data = development_data, family = poisson(link="log"))
+broom::tidy(development_model4, exponentiate=T, conf.int=T)
 
+# model with random variables
+development_model4 <- glmer(days_pupation_to_eclosion ~ sex+longterm_diet*larval_diet+(1|fly_line/plate/well)+(1|egg_collection_date), data = development_data, family = poisson(link = "log"))
+emmeans::emmeans(development_model4, specs = ~ sex+longterm_diet*larval_diet, type = "response")
 
 ################################ pupation and eclosion graphs ###########################
-(pupation+pupation_eclosion)/eclosion+
+eclosion/(pupation+pupation_eclosion)+
   plot_layout(guides = "collect")+
   plot_annotation(title = "Effect of longterm diet and larval diet on development times in males and females", tag_levels = "A")+
   theme(plot.title = element_text(size = 20))
@@ -358,11 +368,14 @@ eclosion_egg_laying <- development_data2 %>%
 ############### Analysis
 
 
-development_model4 <- lm(days_eclosion_to_egg_laying ~ longterm_diet*larval_diet*fly_line, data = development_data2)
+development_model5 <- lm(days_eclosion_to_egg_laying ~ longterm_diet*larval_diet*fly_line, data = development_data2)
 
-development_model4 <- glmer(days_eclosion_to_egg_laying ~ longterm_diet*larval_diet+(1|fly_line)+(1|f2_egg_collection_date), data = development_data2, family = poisson(link = "log"))
+#account for random vairbale ---- no effect so just use normal glm
+development_model5<- glmer(days_eclosion_to_egg_laying ~ longterm_diet*larval_diet+(1|fly_line)+(1|f2_egg_collection_date), data = development_data2, family = poisson(link = "log"))
 
-
+development_model5<- glm(days_eclosion_to_egg_laying ~ longterm_diet*larval_diet, data = development_data2, family = poisson(link="log"))
+broom::tidy(development_model5, exponentiate=T, conf.int=T)
+#
 
 
 
@@ -390,13 +403,18 @@ egg_egg_laying <- development_data2 %>%
 ############### Analysis
 
 
-development_model5 <- lm(egg_to_egg_laying ~ longterm_diet*larval_diet*fly_line, data = development_data2)
+development_model6 <- lm(egg_to_egg_laying ~ longterm_diet*larval_diet*fly_line, data = development_data2)
 
-development_model5 <- glmer(egg_to_egg_laying ~ longterm_diet*larval_diet+(1|fly_line)+(1|f2_egg_collection_date), data = development_data2, family = poisson(link = "log"))
+#model with random variables - no effect so use glm
+development_model6 <- glmer(egg_to_egg_laying ~ longterm_diet*larval_diet+(1|fly_line)+(1|f2_egg_collection_date), data = development_data2, family = poisson(link = "log"))
 
+development_model6<- glm(egg_to_egg_laying ~ longterm_diet*larval_diet, data = development_data2, family = poisson(link="log"))
+broom::tidy(development_model6, exponentiate=T, conf.int=T)
 
-
-
+#model with random variables   --- random variables have no effect
+development_model6 <- glmer(egg_to_egg_laying ~ longterm_diet*larval_diet+(1|fly_line)+(1|f2_egg_collection_date), data = development_data2, family = poisson(link = "log"))
+summary(development_model6)
+emmeans::emmeans(development_model6, specs = ~ longterm_diet*larval_diet, type = "response")
 
 ############# egg plots ####################
 (eclosion_egg_laying+egg_egg_laying)+

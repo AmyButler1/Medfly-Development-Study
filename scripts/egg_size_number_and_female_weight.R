@@ -21,10 +21,13 @@ library(lme4)
 library(lmerTest)
 
 ## egg volume - cubic micrometers
+
 egg_size_model <- lmer(egg_volume ~ long_term_diet*larval_diet +(1|fly_line), data = egg_size)
 
 means_egg_size <- emmeans::emmeans(egg_size_model, specs = pairwise~ long_term_diet*larval_diet, type = "response")
 means_egg_size
+
+anova(egg_size_model)
 
 sim_egg_size <- DHARMa::simulateResiduals(egg_size_model)
 plot(sim_egg_size)
@@ -62,6 +65,8 @@ weight.model <- lmer(`weight (mg)`~ longterm_diet*larval_diet +(1|fly_line), dat
 means <- emmeans::emmeans(weight.model, specs = pairwise~ longterm_diet*larval_diet, type = "response")
 means
 
+anova(weight.model)
+
 sim <- DHARMa::simulateResiduals(weight.model)
 plot(sim)
 
@@ -90,11 +95,16 @@ egg_number_data <- read_excel("data/final_egg_collections.xlsx")
 # clean up column names
 egg_number_data <- janitor::clean_names(egg_number_data)
 
+fixed_egg_number_data <- egg_number_data <- egg_number_data %>% 
+  mutate(fixed_egg_number = as.numeric((f3_egg_number/female_number)))
 
-egg_number_model <- lmer(f3_egg_number ~ longterm_diet*larval_diet +(1|fly_line), data = egg_number_data)
+# this has t- value (and P-value in regards to t?)
+egg_number_model <- lmer(fixed_egg_number ~ longterm_diet*larval_diet +(1|fly_line), data = fixed_egg_number_data)
 
 means_egg_number <- emmeans::emmeans(egg_number_model, specs = pairwise~ longterm_diet*larval_diet, type = "response")
 means_egg_number
+
+anova(egg_number_model)
 
 sim_egg_number <- DHARMa::simulateResiduals(egg_number_model)
 plot(sim_egg_number)
@@ -105,10 +115,10 @@ as.data.frame(means_egg_number$emmeans) %>% ggplot(aes(x=longterm_diet, y = emme
 egg_number_plot <- as.data.frame(means_egg_number$emmeans) %>% 
   ggplot(aes(x=longterm_diet, y = emmean, colour = larval_diet))+
   geom_point(size = 4, position=position_dodge(width=0.9))+
-  geom_boxplot(data = egg_number_data, aes(x = longterm_diet, y = f3_egg_number, colour = larval_diet, fill=larval_diet), alpha = 0.2, position=position_dodge(width=0.9))+
+  geom_boxplot(data = egg_number_data, aes(x = longterm_diet, y = fixed_egg_number, colour = larval_diet, fill=larval_diet), alpha = 0.2, position=position_dodge(width=0.9))+
   scale_color_brewer(palette = "Set2")+
   scale_fill_brewer(palette = "Set2")+
-  labs(x="longterm diet", y="number of eggs laid")+
+  labs(x="longterm diet", y="number of eggs laid per female")+
   guides(fill=guide_legend(title = "larval diet"))+
   theme_minimal() 
   
