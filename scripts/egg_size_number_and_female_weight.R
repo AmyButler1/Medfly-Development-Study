@@ -159,3 +159,50 @@ egg_number_plot
   plot_layout(guides = "collect")+
   plot_annotation( tag_levels = "A")
 
+
+
+
+
+
+
+##REVISED PLOTS####
+egg_plot <- as.data.frame(means_egg_size$emmeans) %>% 
+  ggplot(aes(x=long_term_diet, y = emmean,fill =larval_diet), show.legend = FALSE)+
+  geom_point(shape=21, colour="black",size = 4, position=position_dodge(width=0.9), )+
+  geom_errorbar(aes(y=emmean, ymin=lower.CL, ymax=upper.CL, colour =larval_diet), width = 0.05, show.legend = FALSE,position = position_dodge(width = 0.9))+
+  scale_color_brewer(palette = "Set2")+
+  scale_fill_brewer(palette = "Set2")+
+  labs(x="regime diet", y="egg volume(cubic"~mu~"m)")+
+  guides(fill=guide_legend(title = "proximate diet"))+
+  theme_minimal() 
+
+
+body_weight <- as.data.frame(means$emmeans) %>% 
+  ggplot(aes(x=longterm_diet, y = emmean,fill =larval_diet), show.legend = FALSE)+
+  geom_point(shape=21, colour="black",size = 4, position=position_dodge(width=0.9), )+
+  geom_errorbar(aes(y=emmean, ymin=lower.CL, ymax=upper.CL, colour =larval_diet), width = 0.05, show.legend = FALSE,position = position_dodge(width = 0.9))+
+  scale_color_brewer(palette = "Set2")+
+  scale_fill_brewer(palette = "Set2")+
+  labs(x="regime diet", y="adult female weight (mg)")+
+  guides(fill=guide_legend(title = "proximate diet"))+
+  theme_minimal() 
+
+
+egg_number_plot <- as.data.frame(means_egg_number$emmeans) %>% 
+  ggplot(aes(x=longterm_diet, y = emmean,fill =larval_diet), show.legend = FALSE)+
+  geom_point(shape=21, colour="black",size = 4, position=position_dodge(width=0.9), )+
+  geom_errorbar(aes(y=emmean, ymin=lower.CL, ymax=upper.CL, colour =larval_diet), width = 0.05, show.legend = FALSE,position = position_dodge(width = 0.9))+
+  scale_color_brewer(palette = "Set2")+
+  scale_fill_brewer(palette = "Set2")+
+  labs(x="regime diet", y="number of eggs laid per female")+
+  guides(fill=guide_legend(title = "proximate diet"))+
+  theme_minimal() 
+
+egg_plot <- egg_plot+theme(axis.title = element_text(size = 15), axis.text = element_text(size=13))
+egg_number_plot <- egg_number_plot+theme(axis.title = element_text(size = 15), axis.text = element_text(size=13))
+body_weight<-body_weight+theme(axis.title = element_text(size = 15), axis.text = element_text(size=13))
+
+(egg_plot+egg_number_plot)/(body_weight)+
+  plot_layout(guides = "collect")+
+  plot_annotation( tag_levels = "A")
+

@@ -10,6 +10,7 @@ development_data <- janitor::clean_names(development_data)
 development_data <- development_data%>%
   mutate(eclosion_status = recode(eclosion_status, 'not elosed' = "not_eclosed", 'partially eclosed' = "not_eclosed", partially_ecllosed = "not_eclosed", partially_eclosed = "not_eclosed"))
 
+
 #rename m and f - males and females
 development_data <- development_data %>%
   mutate(sex = recode(sex, 'f' = "female", 'm' = "male"))
@@ -75,16 +76,18 @@ survival <- as.data.frame(means_survival$emmeans) %>%
 
 
 #####graph to use #####################
-as.data.frame(means_survival$emmeans) %>%
+survival_graph <- as.data.frame(means_survival$emmeans) %>%
   ggplot(aes(x=longterm_diet, y = prob, colour = larval_diet))+
   geom_point(size = 4, position=position_dodge(width=0.9))+
   geom_errorbar(aes(y=prob, ymin=asymp.LCL, ymax=asymp.UCL, colour =larval_diet), width = 0.05, position = position_dodge(width = 0.9))+
   ylim(0.5, 1)+
   scale_color_brewer(palette = "Set2")+
   scale_fill_brewer(palette = "Set2")+
-  labs(x="long-term diet", y="probability of eclosion")+
-  guides(colour=guide_legend(title = "larval diet"))+
+  labs(x="regime diet", y="probability of eclosion")+
+  guides(colour=guide_legend(title = "proximate diet"))+
   theme_minimal()
+
+survival_graph <- survival_graph +theme(axis.title = element_text(size = 15), axis.text = element_text(size=13))
 
 survival_data<-as.data.frame(means_survival$emmeans)
  
@@ -217,7 +220,7 @@ pupation <- development_data %>%
     alpha = 0.3,
     position = position_jitter(
       seed = 1, width = 0.1))+
-  labs(x= "diet combination (longterm diet, larval diet)", y = "days from egg laid to pupation")+
+  labs(x= "diet combination (regime diet, proximate diet)", y = "days from egg laid to pupation")+
   scale_color_brewer(palette = "Set2")+
   scale_fill_brewer(palette = "Set2")+
   theme(axis.text.x = element_text(size = 8))+
@@ -276,7 +279,7 @@ eclosion <- development_data %>%
     position = position_jitter(seed = 1, width = 0.1))+
   scale_color_brewer(palette = "Set2")+
   scale_fill_brewer(palette = "Set2")+
-  labs(x= "diet combination (longterm diet, larval diet)", y= "days from egg laid to eclosion")+
+  labs(x= "diet combination (regime diet, proximate diet)", y= "days from egg laid to eclosion")+
   facet_wrap(~sex)+
   theme_minimal()
 
@@ -286,7 +289,7 @@ eclosion <- development_data %>%
 
 development_model3 <- lm(days_to_eclosion ~ larval_diet*longterm_diet*fly_line, data = development_data)
 
-development_model3 <- glmer(days_to_eclosion ~ sex+larval_diet*longterm_diet+(1|fly_line/plate/well)+(1|egg_collection_date), data = development_data, family = poisson(link = "log"))
+development_model3 <- glmer(days_to_eclosion ~ sex+larval_diet*longterm_diet+(1|fly_line)+(1|plate)+(1|well)+(1|egg_collection_date), data = development_data, family = poisson(link = "log"))
 
 development_model3<- glm(days_to_eclosion ~ sex+longterm_diet*larval_diet, data = development_data, family = poisson(link="log"))
 broom::tidy(development_model3, exponentiate=T, conf.int=T)
@@ -329,7 +332,7 @@ pupation_eclosion <-development_data %>%
     position = position_jitter(seed = 1, width = 0.1))+
   scale_color_brewer(palette = "Set2")+
   scale_fill_brewer(palette = "Set2")+
-  labs(x="diet combination (longterm diet, larval diet)", y = "days from pupation to eclosion")+
+  labs(x="diet combination (regime diet, proximate diet)", y = "days from pupation to eclosion")+
   theme(axis.text.x = element_text(size = 8))+
   facet_wrap(~sex)+
   theme(axis.text = element_text(size = 14), axis.title = element_text(size = 16))+
@@ -351,23 +354,25 @@ development_model4<- glm(days_pupation_to_eclosion ~ sex+longterm_diet*larval_di
 broom::tidy(development_model4, exponentiate=T, conf.int=T)
 
 # model with random variables
-development_model4 <- glmer(days_pupation_to_eclosion ~ sex+longterm_diet*larval_diet+(1|fly_line/plate/well)+(1|egg_collection_date), data = development_data, family = poisson(link = "log"))
+development_model4 <- glmer(days_pupation_to_eclosion ~ sex+longterm_diet*larval_diet+(1|fly_line) +(1|plate)+(1|well)+(1|egg_collection_date), data = development_data, family = poisson(link = "log"))
 emmeans::emmeans(development_model4, specs = ~ longterm_diet*larval_diet, type = "response")
 
 ################################ pupation and eclosion graphs ###########################
-eclosion/(pupation+pupation_eclosion)+
+(eclosion+theme(axis.title = element_text(size = 17), axis.text = element_text(size=13)))/((pupation+theme(axis.title = element_text(size = 17), axis.text = element_text(size=13)))+(pupation_eclosion+theme(axis.title = element_text(size = 17), axis.text = element_text(size=13)))+
   plot_layout(guides = "collect")+
   plot_annotation(title = "Effect of longterm diet and larval diet on development times in males and females", tag_levels = "A")+
-  theme(plot.title = element_text(size = 20), axis.title = element_text(size=20))
+  theme(plot.title = element_text(size = 20), axis.title = element_text(size=20)
+        
+eclosion<- eclosion +theme(axis.title = element_text(size = 16), axis.text = element_text(size=13))
+pupation<- pupation+theme(axis.title = element_text(size = 16), axis.text = element_text(size=13))
+pupation_eclosion<- pupation_eclosion+theme(axis.title = element_text(size = 16), axis.text = element_text(size=13))
 
-
-
-eclosion/(pupation+pupation_eclosion)+
+eclosion/pupation/pupation_eclosion+
+  
   plot_layout(guides = "collect")+
+  theme(legend.text = element_text(size=13), legend.title = element_text(size = 15))+
   plot_annotation( tag_levels = "A")+
-  theme(plot.tag = element_text(size = 20), axis.title = element_text(size=20))
-
-
+  theme(plot.tag = element_text(size = 20))
 
 
 
@@ -410,9 +415,10 @@ eclosion_egg_laying <-development_data2 %>%
   stat_summary(aes(label=round(..x.., 2)),fun = "mean", geom = "text", size=5, show.legend = FALSE)+
   scale_color_brewer(palette = "Set2")+
   scale_fill_brewer(palette = "Set2")+
-  labs(x="days from first eclosion to first egg laying", y="diet (longterm diet, larval diet)")+
+  labs(x="days from first eclosion to first egg laying", y="diet (regime diet, proximate diet)")+
+  
   theme_minimal()
-
+eclosion_egg_laying +theme(axis.text = element_text(size=13), axis.title = element_text(size=17))
 
 ############### Analysis
 

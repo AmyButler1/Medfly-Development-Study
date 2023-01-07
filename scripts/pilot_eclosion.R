@@ -107,4 +107,7 @@ pilot_eclosions_na_chi<- glm(plate~eclosion_status,family = binomial, data = ecl
 
 
 pilot_eclosions$eclosion_status <- as.factor(pilot_eclosions$eclosion_status)
+pilot_eclosions$plate<-as.factor(pilot_eclosions$plate)
+pilot_eclosions$eclosion_status <- factor(pilot_eclosions$eclosion_status, levels = c("not_eclosed","eclosed"))
 eclosion_model <- glm(eclosion_status ~  plate,data = pilot_eclosions, family = binomial)
+emmeans::emmeans(eclosion_model, specs = ~ plate, type = "response")

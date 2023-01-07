@@ -87,5 +87,6 @@ egg_ls3 <- lm(egg_volume ~ selection_diet/fly_line, data = egg_size)
 summary(egg_ls3)
 egg_ls3 <- lm(egg_volume ~ selection_diet, data = egg_size)
 summary(egg_ls3)
+emmeans::emmeans(egg_ls3, specs = ~selection_diet  , type = "response")
 
 plot(egg_ls3)
