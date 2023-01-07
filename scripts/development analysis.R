@@ -28,7 +28,7 @@ development_data$eclosion_status <- as.factor(development_data$eclosion_status)
 development_data$eclosion_status <- factor(development_data$eclosion_status, levels = c("not_eclosed","eclosed"))
 
 eclosion_model <- glmer(eclosion_status ~ longterm_diet*larval_diet+(1|fly_line/plate/well)+(1|egg_collection_date), data = development_data, family = binomial)
-
+eclosion_model <- glmer(eclosion_status ~ longterm_diet*larval_diet+(1|fly_line)+(1|plate)+(1|well)+(1|egg_collection_date), data = development_data, family = binomial)
 means_survival <- emmeans::emmeans(eclosion_model, specs =pairwise ~longterm_diet*larval_diet, type = "response")
 #prob of not eclosing:
 #ASG,ASG - 0.0676
@@ -69,10 +69,40 @@ as.data.frame(means_survival$emmeans) %>%
 survival <- as.data.frame(means_survival$emmeans) %>%
   ggplot(aes(x=interaction(longterm_diet, larval_diet), y = emmean, colour = larval_diet))+
   geom_point(size = 4, position=position_dodge(width=0.9))+
+  
   theme_classic()
 
+
+
+#####graph to use #####################
+as.data.frame(means_survival$emmeans) %>%
+  ggplot(aes(x=longterm_diet, y = prob, colour = larval_diet))+
+  geom_point(size = 4, position=position_dodge(width=0.9))+
+  geom_errorbar(aes(y=prob, ymin=asymp.LCL, ymax=asymp.UCL, colour =larval_diet), width = 0.05, position = position_dodge(width = 0.9))+
+  ylim(0.5, 1)+
+  scale_color_brewer(palette = "Set2")+
+  scale_fill_brewer(palette = "Set2")+
+  labs(x="long-term diet", y="probability of eclosion")+
+  guides(colour=guide_legend(title = "larval diet"))+
+  theme_minimal()
+
+survival_data<-as.data.frame(means_survival$emmeans)
+ 
+development_data %>%
+  ggplot(aes(x=longterm_diet, y = count(eclosion_status), colour = larval_diet))+
+  geom_point()
+  
+  geom_point(data = development_data, aes(x = longterm_diet, y = count(eclosion_status), colour = larval_diet ), alpha = 0.2,position=position_dodge(width=0.9))+
+  theme_classic()
+survival <- as.data.frame(means_survival$emmeans) %>%
+  ggplot(aes(x=interaction(longterm_diet, larval_diet), y = emmean, colour = larval_diet))+
+  geom_point(size = 4, position=position_dodge(width=0.9))+
+  theme_classic()
+
+
+
 survival_plot <- as.data.frame(means_survival$emmeans) %>% 
-  ggplot(aes(x=longterm_diet, y = emmean, colour = larval_diet))+
+  ggplot(aes(x=longterm_diet, y = prob, colour = larval_diet))+
   geom_point(size = 4, position=position_dodge(width=0.9))+
   geom_boxplot(data = development_data, aes(x = longterm_diet, y = count(eclosion_status), colour = larval_diet, fill=larval_diet), alpha = 0.2, position=position_dodge(width=0.9))+
   scale_color_brewer(palette = "Set2")+
@@ -262,7 +292,7 @@ development_model3<- glm(days_to_eclosion ~ sex+longterm_diet*larval_diet, data 
 broom::tidy(development_model3, exponentiate=T, conf.int=T)
 
 
-emmeans::emmeans(development_model3, specs = ~ sex+longterm_diet*larval_diet, type = "response")
+emmeans::emmeans(development_model3, specs = ~ longterm_diet*larval_diet, type = "response")
 
 
 
@@ -302,7 +332,7 @@ pupation_eclosion <-development_data %>%
   labs(x="diet combination (longterm diet, larval diet)", y = "days from pupation to eclosion")+
   theme(axis.text.x = element_text(size = 8))+
   facet_wrap(~sex)+
-  theme(strip.text = element_blank(), strip.background = element_blank())+
+  theme(axis.text = element_text(size = 14), axis.title = element_text(size = 16))+
   theme_minimal()
 ###### cant figure out how to get rid of facet labels --- strip text and strip backgound isnt working ############
 
@@ -322,16 +352,20 @@ broom::tidy(development_model4, exponentiate=T, conf.int=T)
 
 # model with random variables
 development_model4 <- glmer(days_pupation_to_eclosion ~ sex+longterm_diet*larval_diet+(1|fly_line/plate/well)+(1|egg_collection_date), data = development_data, family = poisson(link = "log"))
-emmeans::emmeans(development_model4, specs = ~ sex+longterm_diet*larval_diet, type = "response")
+emmeans::emmeans(development_model4, specs = ~ longterm_diet*larval_diet, type = "response")
 
 ################################ pupation and eclosion graphs ###########################
 eclosion/(pupation+pupation_eclosion)+
   plot_layout(guides = "collect")+
   plot_annotation(title = "Effect of longterm diet and larval diet on development times in males and females", tag_levels = "A")+
-  theme(plot.title = element_text(size = 20))
+  theme(plot.title = element_text(size = 20), axis.title = element_text(size=20))
 
 
 
+eclosion/(pupation+pupation_eclosion)+
+  plot_layout(guides = "collect")+
+  plot_annotation( tag_levels = "A")+
+  theme(plot.tag = element_text(size = 20), axis.title = element_text(size=20))
 
 
 
@@ -359,16 +393,25 @@ development_data2 %>%
 
 # plot
 
-eclosion_egg_laying <- development_data2 %>%
-  ggplot(aes(y=interaction(longterm_diet, larval_diet), x=days_eclosion_to_egg_laying, colour = interaction(longterm_diet,larval_diet), fill=interaction(longterm_diet,larval_diet)))+
-  geom_density_ridges(show.legend = FALSE, alpha=0.7)+
+
+
+
+
+meansd<-function(x, ...){
+  mean<-mean(x)
+  sd<-sd(x)
+  c(mean - sd,mean,mean+sd)
+}
+
+
+eclosion_egg_laying <-development_data2 %>%
+  ggplot(aes(y=interaction(longterm_diet, larval_diet), x=days_eclosion_to_egg_laying,  fill=interaction(longterm_diet,larval_diet)))+
+  geom_density_ridges(quantile_lines = T, quantile_fun = meansd, show.legend = FALSE, alpha=0.4)+
+  stat_summary(aes(label=round(..x.., 2)),fun = "mean", geom = "text", size=5, show.legend = FALSE)+
   scale_color_brewer(palette = "Set2")+
   scale_fill_brewer(palette = "Set2")+
-  labs(x="days from first eclosion to first egg laying", y="diet combination (longterm diet, larval diet)")+
+  labs(x="days from first eclosion to first egg laying", y="diet (longterm diet, larval diet)")+
   theme_minimal()
-
-
-
 
 
 ############### Analysis
@@ -381,9 +424,10 @@ development_model5<- glmer(days_eclosion_to_egg_laying ~ longterm_diet*larval_di
 
 development_model5<- glm(days_eclosion_to_egg_laying ~ longterm_diet*larval_diet, data = development_data2, family = poisson(link="log"))
 broom::tidy(development_model5, exponentiate=T, conf.int=T)
-#
+means_egg <-emmeans::emmeans(development_model5, specs = ~longterm_diet*larval_diet, type = "response")
 
 
+#trend towards . but not signif
 
 
 
@@ -396,15 +440,6 @@ development_data2 <- development_data2 %>%
 development_data2 %>% 
   group_by(fly_line, longterm_diet, larval_diet, egg_to_egg_laying) %>% 
   summarise(n=n())
-
-egg_egg_laying <- development_data2 %>%
-  ggplot(aes(y=interaction(longterm_diet, larval_diet), x= egg_to_egg_laying, colour = interaction(longterm_diet,larval_diet), fill=interaction(longterm_diet,larval_diet)))+
-  geom_density_ridges(show.legend = FALSE, alpha= 0.7)+
-  scale_color_brewer(palette = "Set2")+
-  scale_fill_brewer(palette = "Set2")+
-  labs(x="days from egg to first egg laying", y="diet combination (longterm diet, larval diet)")+
-  theme_minimal()
-
 
 ############### Analysis
 
@@ -420,14 +455,42 @@ broom::tidy(development_model6, exponentiate=T, conf.int=T)
 #model with random variables   --- random variables have no effect
 development_model6 <- glmer(egg_to_egg_laying ~ longterm_diet*larval_diet+(1|fly_line)+(1|f2_egg_collection_date), data = development_data2, family = poisson(link = "log"))
 summary(development_model6)
-emmeans::emmeans(development_model6, specs = ~ longterm_diet*larval_diet, type = "response")
+egg_laying_means <- emmeans::emmeans(development_model6, specs = ~ longterm_diet*larval_diet, type = "response")
+
+
+egg_means <-as.data.frame(egg_laying_means$emmeans)
+egg_means <- as.data.frame(egg_laying_means)
+
+egg_egg_laying <- development_data2 %>%
+  ggplot(aes(y=interaction(longterm_diet, larval_diet), x= egg_to_egg_laying, colour = interaction(longterm_diet,larval_diet), fill=interaction(longterm_diet,larval_diet)))+
+  geom_density_ridges(show.legend = FALSE, alpha= 0.7)+
+  scale_color_brewer(palette = "Set2")+
+  scale_fill_brewer(palette = "Set2")+
+  labs(x="days from egg to first egg laying", y="diet combination (longterm diet, larval diet)")+
+  theme_minimal()
+
+
+egg_egg_laying <-development_data2 %>%
+  ggplot(aes(y=interaction(longterm_diet, larval_diet), x=egg_to_egg_laying,  fill=interaction(longterm_diet,larval_diet)))+
+  geom_density_ridges(quantile_lines = T, quantile_fun = meansd, show.legend = FALSE, alpha=0.4)+
+  stat_summary(aes(label=round(..x.., 2)),fun = "mean", geom = "text", size=5, show.legend = FALSE)+
+  scale_color_brewer(palette = "Set2")+
+  scale_fill_brewer(palette = "Set2")+
+  labs(x="days from egg to first egg laying", y="diet (longterm diet, larval diet)")+
+  theme_minimal()
+
+
 
 ############# egg plots ####################
+#for presentation
 (eclosion_egg_laying+egg_egg_laying)+
   plot_layout(guides = "collect")+
   plot_annotation(title = "Effect of longterm diet and larval diet on development times", tag_levels = "A")+
   theme(plot.title = element_text(size = 20))
-
+#for paper
+(eclosion_egg_laying+egg_egg_laying)+
+  plot_layout(guides = "collect")+
+  plot_annotation(tag_levels = "A")
 
 
 ####################### time of eclosion ###################################################################################
@@ -439,13 +502,21 @@ development_data <- drop_na(development_data, c(hour_of_event, sex))
 ggplot(development_data, aes(x = hour_of_event, fill = sex))+
   geom_histogram(aes(y=..density..),breaks = seq(0,24), position="dodge")+
   theme_minimal()+
-  facet_wrap(~larval_diet)+
+  facet_wrap(~interaction(longterm_diet,larval_diet))+
   annotate("rect", xmin = 0, xmax = 8, ymin = 0, ymax = Inf, fill = "grey", alpha = 0.4)+
-  annotate("rect", xmin = 20, xmax = 24, ymin = 0, ymax = Inf, fill = "grey", alpha =0.4)
+  annotate("rect", xmin = 20, xmax = 24, ymin = 0, ymax = Inf, fill = "grey", alpha =0.4)+
+  labs(x="hour of eclosion", y= "probability of eclosion")+
+  xlim(0, 24)+
+  scale_color_brewer(palette = "Set2")+
+  scale_fill_brewer(palette = "Set2")+
+  theme_minimal()
+
   
 coord_polar(start = 0)
 
-
+eclosion_time <- glmer(hour_of_event ~ sex+longterm_diet*larval_diet+(1|fly_line), data = development_data, family = poisson(link = "log"))
+summary(eclosion_time)
+egg_laying_means <- emmeans::emmeans(development_model6, specs = ~ longterm_diet*larval_diet, type = "response")
 
 
 

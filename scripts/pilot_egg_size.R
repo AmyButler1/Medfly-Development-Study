@@ -1,8 +1,8 @@
 source("scripts/functions.R") #loads required functions
 
 ### TIDY DATA #######################################################
+egg_size <- read_excel("data/pilot_data/pilot_egg_size.xlsx")
 
-egg_size <- read_csv("data/egg size 17_02.csv")
 # view(egg_size)
 # skim(egg_size)
 head(egg_size)
@@ -10,7 +10,7 @@ head(egg_size)
 
 egg_size <- egg_size %>%
   rename(fly_line = "line",
-         selection_diet = "line_type") %>% 
+         selection_diet = "line_type") 
 
 
 ### PLOTS ############################################################
@@ -85,4 +85,7 @@ summary(egg_ls2)
 
 egg_ls3 <- lm(egg_volume ~ selection_diet/fly_line, data = egg_size)
 summary(egg_ls3)
+egg_ls3 <- lm(egg_volume ~ selection_diet, data = egg_size)
+summary(egg_ls3)
+
 plot(egg_ls3)

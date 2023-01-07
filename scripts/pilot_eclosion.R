@@ -7,13 +7,15 @@ library(RColorBrewer)
 library(forcats)
 
 ##read in data (doesnt work)
-eclosions <- read_csv("data/pilot_eclosions.csv")
+eclosions <- read_excel("data/pilot_data/pilot_eclosions.xlsx")
+
 
 ##rename dataset
 eclosions <- eclosions %>% 
 rename(eclosion_date = "eclosion date")%>% 
   mutate(eclosion_date = lubridate::dmy(eclosion_date))
 
+pilot_eclosions_na <- eclosions %>% drop_na(eclosion_status)
 
 ##check data imported correctly
 ### view whole dataset
@@ -103,3 +105,6 @@ view(eclosion_na_collapse)
 pilot_eclosions_na_chi<- glm(plate~eclosion_status,family = binomial, data = eclosion_na_collapse)
 
 
+
+pilot_eclosions$eclosion_status <- as.factor(pilot_eclosions$eclosion_status)
+eclosion_model <- glm(eclosion_status ~  plate,data = pilot_eclosions, family = binomial)
